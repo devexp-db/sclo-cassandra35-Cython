@@ -5,20 +5,13 @@
 %bcond_with tests
 
 Name:           Cython
-Version:        0.25.2
-Release:        7%{?dist}
+Version:        0.27.1
+Release:        1%{?dist}
 Summary:        A language for writing Python extension modules
 
 License:        ASL 2.0
 URL:            http://www.cython.org
 Source:         https://github.com/cython/cython/archive/%{version}/%{srcname}-%{version}.tar.gz
-
-# https://bugzilla.redhat.com/show_bug.cgi?id=1406533
-# https://github.com/cython/cython/pull/1560
-Patch0001:      0001-fix-typo-in-Compiler-Options.py.patch
-# https://bugzilla.redhat.com/show_bug.cgi?id=1406905
-# https://github.com/cython/cython/pull/483
-Patch0002:      0001-Check-sys.path-for-.pxi-files-too.patch
 
 BuildRequires:  gcc
 %if %{with tests}
@@ -35,13 +28,14 @@ for writing Python extension modules.
 Summary:        %{summary}
 %{?python_provide:%python_provide python2-%{srcname}}
 Provides:       Cython = %{?epoch:%{epoch}:}%{version}-%{release}
+Provides:       Cython%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
 Obsoletes:      Cython < %{?epoch:%{epoch}:}%{version}-%{release}
 BuildRequires:  python2-devel
 BuildRequires:  python2-setuptools
 %if %{with tests}
 BuildRequires:  python2-coverage
 BuildRequires:  python2-numpy
-BuildRequires:  python-jedi
+BuildRequires:  python2-jedi
 %endif
 
 %description -n python2-%{srcname} %{_description}
@@ -52,6 +46,7 @@ Python 2 version.
 Summary:        %{summary}
 %{?python_provide:%python_provide python3-%{srcname}}
 BuildRequires:  python3-devel
+BuildRequires:  python3-setuptools
 %if %{with tests}
 BuildRequires:  python3-coverage
 BuildRequires:  python3-numpy
@@ -112,6 +107,9 @@ rm -rf %{buildroot}%{python2_sitelib}/setuptools/tests
 %{python3_sitearch}/__pycache__/%{upname}.*
 
 %changelog
+* Mon Oct 02 2017 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.27.1-1
+- Update to 0.27.1
+
 * Wed Aug 02 2017 Fedora Release Engineering <releng@fedoraproject.org> - 0.25.2-7
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
 
