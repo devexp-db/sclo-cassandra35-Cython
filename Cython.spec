@@ -1,12 +1,17 @@
+%{?scl:%scl_package Cython}
+%{!?scl:%global pkg_name %{name}}
+
 %global srcname Cython
 %global upname cython
+
+%global with_python3 0
 
 # https://github.com/cython/cython/issues/1548
 %bcond_with tests
 
-Name:           Cython
+Name:           %{?scl_prefix}Cython
 Version:        0.27.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A language for writing Python extension modules
 
 License:        ASL 2.0
@@ -18,18 +23,21 @@ BuildRequires:  gcc
 BuildRequires:  gcc-c++
 %endif
 
+%{?scl:Requires: %scl_runtime}
+%{?scl:BuildRequires: %scl-scldevel}
+
 %global _description \
 This is a development version of Pyrex, a language\
 for writing Python extension modules.
 
 %description %{_description}
 
-%package -n python2-%{srcname}
+%package -n %{?scl_prefix}python2-%{srcname}
 Summary:        %{summary}
 %{?python_provide:%python_provide python2-%{srcname}}
-Provides:       Cython = %{?epoch:%{epoch}:}%{version}-%{release}
-Provides:       Cython%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
-Obsoletes:      Cython < %{?epoch:%{epoch}:}%{version}-%{release}
+Provides:       %{?scl_prefix}Cython = %{?epoch:%{epoch}:}%{version}-%{release}
+Provides:       %{?scl_prefix}Cython%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
+Obsoletes:      %{?scl_prefix}Cython < %{?epoch:%{epoch}:}%{version}-%{release}
 BuildRequires:  python2-devel
 BuildRequires:  python2-setuptools
 %if %{with tests}
@@ -38,11 +46,12 @@ BuildRequires:  python2-numpy
 BuildRequires:  python2-jedi
 %endif
 
-%description -n python2-%{srcname} %{_description}
+%description -n %{?scl_prefix}python2-%{srcname} %{_description}
 
 Python 2 version.
 
-%package -n python3-%{srcname}
+%if 0%{?with_python3}
+%package -n %{?scl_prefix}python3-%{srcname}
 Summary:        %{summary}
 %{?python_provide:%python_provide python3-%{srcname}}
 BuildRequires:  python3-devel
@@ -53,37 +62,48 @@ BuildRequires:  python3-numpy
 BuildRequires:  python3-jedi
 %endif
 
-%description -n python3-%{srcname} %{_description}
+%description -n %{?scl_prefix}python3-%{srcname} %{_description}
 
 Python 3 version.
+%endif
 
 %prep
 %autosetup -n %{upname}-%{version} -p1
 
 %build
+%{?scl:scl enable %{scl} - << "EOF"}
 %py2_build
+%if 0%{?with_python3}
 %py3_build
+%endif
+%{?scl:EOF}
 
 %install
+%{?scl:scl enable %{scl} - << "EOF"}
+%if 0%{?with_python3}
 # Must do the python3 install first because the scripts in /usr/bin are
 # overwritten with every setup.py install (and we want the python2 version
 # to be the default for now).
-%py3_install
+%{py3_install -- --prefix %{?_prefix}}
 for bin in cython cythonize cygdb; do
   mv %{buildroot}%{_bindir}/${bin} %{buildroot}%{_bindir}/${bin}3
 done
 rm -rf %{buildroot}%{python3_sitelib}/setuptools/tests
+%endif
 
-%py2_install
+%{py2_install -- --prefix %{?_prefix}}
 rm -rf %{buildroot}%{python2_sitelib}/setuptools/tests
+%{?scl:EOF}
 
 %if %{with tests}
 %check
 %{__python2} runtests.py -vv
+%if 0%{?with_python3}
 %{__python3} runtests.py -vv
 %endif
+%endif
 
-%files -n python2-%{srcname}
+%files -n %{?scl_prefix}python2-%{srcname}
 %license LICENSE.txt
 %doc *.txt Demos Doc Tools
 %{_bindir}/cython
@@ -94,7 +114,8 @@ rm -rf %{buildroot}%{python2_sitelib}/setuptools/tests
 %{python2_sitearch}/pyximport/
 %{python2_sitearch}/%{upname}.py*
 
-%files -n python3-%{srcname}
+%if 0%{?with_python3}
+%files -n %{?scl_prefix}python3-%{srcname}
 %license LICENSE.txt
 %doc *.txt Demos Doc Tools
 %{_bindir}/cython3
@@ -105,8 +126,12 @@ rm -rf %{buildroot}%{python2_sitelib}/setuptools/tests
 %{python3_sitearch}/pyximport/
 %{python3_sitearch}/%{upname}.py
 %{python3_sitearch}/__pycache__/%{upname}.*
+%endif
 
 %changelog
+* Wed Oct 04 2017 Augusto Mecking Caringi <acaringi@redhat.com> - 0.27.1.-2
+- scl conversion
+
 * Mon Oct 02 2017 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 0.27.1-1
 - Update to 0.27.1
 
